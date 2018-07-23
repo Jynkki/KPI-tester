@@ -1,0 +1,17 @@
+{
+  "serverURI": "",
+  "URLPath": "ddm",
+  "httpsURL": "",
+  "Authorization": "",
+  "X-DeviceNetwork": "",
+  "pskKey": "",
+  "endpoint": "",
+  "BootstrapServerName": "",
+  "DataCollectorId": "",
+  "DeviceIdentifier": "",
+  "DeviceStandard": "",
+  "DeviceTemplateId": "",
+  "DeviceTypeId": "",
+  "LocationId": "",
+  "Name": ""
+}

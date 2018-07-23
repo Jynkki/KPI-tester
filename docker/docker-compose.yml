@@ -1,0 +1,20 @@
+version: '3.3'
+
+services:
+  kpi:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: kpi:0.1
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: none
+    secrets:
+      - source: kpi_secret
+        target: configuration.json
+
+secrets:
+  kpi_secret:
+    file: ${KPI_SECRET}
+
