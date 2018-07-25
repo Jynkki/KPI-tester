@@ -13,5 +13,7 @@
   "DeviceTemplateId": "",
   "DeviceTypeId": "",
   "LocationId": "",
-  "Name": ""
+  "Name": "",
+  "ConnectTimeout": 10000,
+  "ReadTimeout": 12000
 }

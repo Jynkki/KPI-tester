@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.Arrays;
+import java.lang.Integer;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -69,9 +70,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class LeshanClientDemo {
+public class KpiDemo {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LeshanClientDemo.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KpiDemo.class);
 
     private final static String[] modelPaths = new String[] { "3303.xml" };
 
@@ -86,10 +87,12 @@ public class LeshanClientDemo {
     private static String URLPath = null; 
 
     private static RandomTemperatureSensor temperatureInstance;
-    private static SecretsConfig secretsConfiguration;
+    //private static SecretsConfig secretsConfiguration;
     private static String token = DEFAULT_TOKEN;
     private static String serverURI = null;
     private static String XDeviceNetwork = null;
+    private static int connectTimeout = 0;
+    private static int readTimeout = 0;
     private static String pskKeyString = null;
     private static String pskIdentityString = null;
     private static byte[] pskIdentity = null;
@@ -143,7 +146,7 @@ public class LeshanClientDemo {
         JSONObject confObject = readConfig();
         deviceId = generateClient(endpoint, pskIdentity, pskKey, confObject);
         if (deviceId != null) {
-            createAndStartClient(endpoint, USE_BOOTSTRAP, serverURI, token, deviceId, 2.64d, httpsURL, URLPath);
+            createAndStartClient(endpoint, USE_BOOTSTRAP, serverURI, token, deviceId, 2.64d, httpsURL, URLPath, readTimeout, connectTimeout);
         } else {
             LOG.error("Error in registrating device. Aborting");
             System.exit(0);
@@ -152,13 +155,13 @@ public class LeshanClientDemo {
 
     public static JSONObject readConfig() {
         String fileName = null;
-        secretsConfiguration = new SecretsConfig();
+        //secretsConfiguration = new SecretsConfig();
         String deviceId = null;
         String pskKey = null;
         JSONParser fileparser = new JSONParser();
         JSONObject configObject = new JSONObject();
         if (LOCAL) {
-            fileName = "configuration.json";
+            fileName = "secret/configuration.json";
         } else {
             fileName = SECRETS_DIR + "configuration.json";
         } 
@@ -180,6 +183,10 @@ public class LeshanClientDemo {
             configObject.put("DeviceIdentifier", endpoint);
             configObject.put("Name", endpoint);
             pskIdentityString = endpoint;
+            connectTimeout = (int) (long) configObject.get("ConnectTimeout");
+            configObject.remove("ConnectTimeout");
+            readTimeout = (int) (long) configObject.get("ReadTimeout");
+            configObject.remove("ReadTimeout");
             pskKeyString = configObject.get("pskKey").toString();
             configObject.remove("pskKey");
             JSONArray SettingsCat = new JSONArray();
@@ -241,6 +248,7 @@ public class LeshanClientDemo {
         } catch (Exception ex) {
 
             System.out.println("Error in Communication to IoTA " + ex);
+            System.exit(0);
             return null;
         } finally {
             //httpClient.releaseConnection();;
@@ -248,7 +256,7 @@ public class LeshanClientDemo {
         return null;
     }
 
-    public static void createAndStartClient(String endpoint, boolean needBootstrap, String serverURI, final String token, final String deviceId, Double temp, final String httpsURL, final String URLPath) {
+    public static void createAndStartClient(String endpoint, boolean needBootstrap, String serverURI, final String token, final String deviceId, Double temp, final String httpsURL, final String URLPath, int readTimeout, int connectTimeout) {
 
         byte [] pskIdentity = pskIdentityString.getBytes();
         byte[] pskKey = pskKeyString.getBytes();
@@ -258,7 +266,7 @@ public class LeshanClientDemo {
         String secureLocalAddress = null;
         //locationInstance = new MyLocation(latitude, longitude, scaleFactor);
         LOG.debug("X-deviceNetwork is " +  XDeviceNetwork);
-        temperatureInstance = new RandomTemperatureSensor(deviceId, token, httpsURL, URLPath, XDeviceNetwork);
+        temperatureInstance = new RandomTemperatureSensor(deviceId, token, httpsURL, URLPath, XDeviceNetwork, readTimeout, connectTimeout);
 
         // Initialize model
         List<ObjectModel> models = ObjectLoader.loadDefault();
@@ -280,10 +288,13 @@ public class LeshanClientDemo {
                 initializer.setInstancesForObject(SERVER, new Server(123, 30, BindingMode.U, false));
             }
         }
-        initializer.setClassForObject(DEVICE, MyDevice.class);
+        //initializer.setClassForObject(DEVICE, MyDevice.class);
         initializer.setInstancesForObject(OBJECT_ID_TEMPERATURE_SENSOR, temperatureInstance);
-        List<LwM2mObjectEnabler> enablers = initializer.create(SECURITY, SERVER, DEVICE, LOCATION,
+        //List<LwM2mObjectEnabler> enablers = initializer.create(SECURITY, SERVER, DEVICE, LOCATION,
+        //        OBJECT_ID_TEMPERATURE_SENSOR);
+        List<LwM2mObjectEnabler> enablers = initializer.create(SECURITY, SERVER,
                 OBJECT_ID_TEMPERATURE_SENSOR);
+
 
         // Create CoAP Config
         NetworkConfig coapConfig;

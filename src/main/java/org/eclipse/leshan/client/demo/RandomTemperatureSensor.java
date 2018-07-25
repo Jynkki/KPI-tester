@@ -1,6 +1,7 @@
 package org.eclipse.leshan.client.demo;
 
 import java.lang.reflect.Field;
+import java.lang.Integer;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -71,14 +72,15 @@ public class RandomTemperatureSensor extends BaseInstanceEnabler {
     private static String deviceStatus = "UNKNOWN";
     private static final Logger LOG = LoggerFactory.getLogger(RandomTemperatureSensor.class);
 
-    public RandomTemperatureSensor(final String deviceId, final String token, final String httpsURL, final String URLPath, final String xDeviceNetwork) {        
+    public RandomTemperatureSensor(final String deviceId, final String token, final String httpsURL, final String URLPath, final String xDeviceNetwork, int readTimeout, int connectTimeout) {        
 
         String baseApiUrl = httpsURL + "/" + URLPath;
         UUID endpoint = UUID.fromString(deviceId); // String | Device endpoint
         String v3Token = token;
-        int connectTimeout = 60000;
-        int readTimeout = 120000;
-
+        //int connectTimeout = 600;
+        //int readTimeout = 1200;
+        LOG.debug("Read timeout: " + readTimeout + " ms");
+        LOG.debug("Connect timeout: " + connectTimeout + " ms");
 
         this.scheduler = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Temperature Sensor"));
         scheduler.scheduleAtFixedRate(new Runnable() {
@@ -90,6 +92,8 @@ public class RandomTemperatureSensor extends BaseInstanceEnabler {
                 String authorization = v3Token; // String | Basic Access Authentication
                 client.setBasePath(baseApiUrl);
                 client.setDebugging(false);
+                client.setConnectTimeout(connectTimeout);
+                client.setReadTimeout(readTimeout);
  
                 String smartObjectId = " ";
                 // Send a random temperatre vale
@@ -110,7 +114,6 @@ public class RandomTemperatureSensor extends BaseInstanceEnabler {
                 SigmaSensationDTODeviceDeviceRequest deviceRequest = new SigmaSensationDTODeviceDeviceRequest();
                 try {
                     SigmaSensationDTODeviceDeviceResponse result = deviceApiInstance.deviceGet_0(endpoint, xDeviceNetwork, authorization);
-
                     if (result != null) {
                         if ((client.getStatusCode() == 200) || (client.getStatusCode() == 204) ) {
                                 for (SigmaSensationDTOSmartObjectSmartObjectListResponse g: result.getSmartObjects()) {
@@ -132,6 +135,9 @@ public class RandomTemperatureSensor extends BaseInstanceEnabler {
                     LOG.error("Error reading the device: " + endpoint);
                     System.exit(0);
                     //e.printStackTrace();
+                } catch (Exception e) {
+                    LOG.error("Timeout when reading Device");
+                    System.exit(0);
                 }
 
                 // Read SmartObject
@@ -153,12 +159,15 @@ public class RandomTemperatureSensor extends BaseInstanceEnabler {
                 } catch (ApiException e) {
                     LOG.error("Error: Unable to perform a read on smart object" + smartObjectId);
                     //e.printStackTrace();
+                } catch (Exception e) {
+                    LOG.error("Timeout when performing a read command to the device");
+                    System.exit(0);
                 }
 
                 // Fetch SmartObject Value
                 try {
-                    // thread to sleep for 3000 milliseconds to stabilize system
-                    Thread.sleep(3000);
+                    // thread to sleep for 5000 milliseconds to stabilize system
+                    Thread.sleep(5000);
                 } catch (Exception e) {
                         LOG.error("Sleep failed: " + e);
                 }
@@ -171,8 +180,14 @@ public class RandomTemperatureSensor extends BaseInstanceEnabler {
                         if ((client.getStatusCode() == 200) || (client.getStatusCode() == 204) ) {
                             for (SigmaSensationDTOResourceResourceResponse g: result.getResources()) {
                                 if (g.getName().equals("Sensor Value")) {
+                                     LOG.debug("result " + g.getLatestMeasurement());
                                      SigmaSensationDTOGrainCommunicationSignalRMeasurementMessage measurement = g.getLatestMeasurement();
                                      LOG.debug("Temperature Read: " + measurement.getV());
+                                     if (measurement.getV() == null ) {
+                                        deviceStatus = "Not OK";
+                                        LOG.info("No measurements found in device");
+                                        System.exit(0);
+                                     }
                                      if (temp != measurement.getV()) {
                                          deviceStatus = "Not OK";                                                  
                                          LOG.debug("Measurement failed. The smartobject is " + smartObjectId + ".  Read value = " + measurement.getV() + " should have been " + temp);
@@ -197,6 +212,9 @@ public class RandomTemperatureSensor extends BaseInstanceEnabler {
                     LOG.error("Error reading the value from the device: " + endpoint);
                     System.exit(0);
                     //e.printStackTrace();
+                } catch (Exception e) {
+                    LOG.error("Timeout when reading the temperature value");
+                    System.exit(0);
                 }
 
             }
