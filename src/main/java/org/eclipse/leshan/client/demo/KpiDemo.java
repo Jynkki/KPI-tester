@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
 import java.util.Arrays;
-import java.lang.Integer;
+import java.util.logging.Level;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -55,6 +55,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.eclipse.californium.core.network.config.NetworkConfig;
+import org.eclipse.californium.core.CaliforniumLogger;
+import org.eclipse.californium.scandium.ScandiumLogger;
 import org.eclipse.leshan.LwM2m;
 import org.eclipse.leshan.client.californium.LeshanClient;
 import org.eclipse.leshan.client.californium.LeshanClientBuilder;
@@ -73,6 +75,12 @@ import org.slf4j.LoggerFactory;
 public class KpiDemo {
 
     private static final Logger LOG = LoggerFactory.getLogger(KpiDemo.class);
+    static {
+        CaliforniumLogger.initialize();
+        CaliforniumLogger.setLevel(Level.WARNING);
+        ScandiumLogger.initialize();
+        ScandiumLogger.setLevel(Level.OFF);
+    }
 
     private final static String[] modelPaths = new String[] { "3303.xml" };
 
@@ -87,7 +95,6 @@ public class KpiDemo {
     private static String URLPath = null; 
 
     private static RandomTemperatureSensor temperatureInstance;
-    //private static SecretsConfig secretsConfiguration;
     private static String token = DEFAULT_TOKEN;
     private static String serverURI = null;
     private static String XDeviceNetwork = null;
